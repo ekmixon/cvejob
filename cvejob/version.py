@@ -32,7 +32,7 @@ class BenevolentVersion(object):
 
         # Only parse non-empty strings
         if not isinstance(self._version_str, str) or not self._version_str:
-            return tuple([self._version_str])
+            return (self._version_str, )
 
         result = []
 

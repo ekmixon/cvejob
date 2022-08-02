@@ -66,10 +66,10 @@ def _filter_collection(collection, date_range, cherry_pick):
             {'published_date': in_range(*date_range)}
         )
 
-        logger.debug(("Filtered out {} Documents that do not fall "
-                      "in the given range.").format(
-            collection_size_before - collection.count()
-        ))
+        logger.debug(
+            f"Filtered out {collection_size_before - collection.count()} Documents that do not fall in the given range."
+        )
+
 
     if cherry_pick:
 
@@ -121,11 +121,7 @@ def run():
 
     if not feed_names:
 
-        if cherrypicked_cve_id:
-            feed_names = [cherrypicked_year]
-        else:
-            feed_names = ['modified']
-
+        feed_names = [cherrypicked_year] if cherrypicked_cve_id else ['modified']
     with FeedManager(n_workers=multiprocessing.cpu_count()) as feed_manager:
 
         feeds = feed_manager.fetch_feeds(
@@ -144,13 +140,14 @@ def run():
 
         return
 
-    logger.debug("Number of CVE Documents in the collection: {}".format(
-        collection.count()
-    ))
+    logger.debug(
+        f"Number of CVE Documents in the collection: {collection.count()}"
+    )
+
 
     if Config.package_name and Config.cve_id:
         # user knows the package name, so we don't have to guess ;)
-        doc = [x for x in collection][0]  # Collection doesn't support indexing
+        doc = list(collection)[0]
         affected, safe = NVDVersions(doc, Config.package_name, Config.ecosystem).run()
         victims_output = VictimsYamlOutput(
             ecosystem=Config.ecosystem,
