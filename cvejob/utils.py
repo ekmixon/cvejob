@@ -62,15 +62,14 @@ def get_cpe(doc, cpe_type: str = None) -> list:
 def get_description_by_lang(doc, lang='en'):
     """Get description for given language."""
     desc_data = rgetattr(doc, 'cve.descriptions.data')
-    desc = None
-
-    for node in desc_data:
-        # if no lang value, assume english
-        if getattr(node, 'lang', 'en') == lang:
-            desc = getattr(node, 'value', None)
-            break
-
-    return desc
+    return next(
+        (
+            getattr(node, 'value', None)
+            for node in desc_data
+            if getattr(node, 'lang', 'en') == lang
+        ),
+        None,
+    )
 
 
 def parse_date_range(range_string: str):
@@ -110,15 +109,15 @@ def parse_date_range(range_string: str):
 
     # This is not a pretty way of parsing the date,
     # but we need to fill in missing values for month and day differently
-    year_from = parse_year(match_from.group('year'))
-    month_from = parse_month(match_from.group('month'), sub=1)
-    day_from = parse_day(match_from.group('day'), year_from, month_from, 'first')
+    year_from = parse_year(match_from['year'])
+    month_from = parse_month(match_from['month'], sub=1)
+    day_from = parse_day(match_from['day'], year_from, month_from, 'first')
 
     date_from = datetime.datetime(year_from, month_from, day_from)
 
-    year_to = parse_year(match_to.group('year'))
-    month_to = parse_month(match_to.group('month'), sub=12)
-    day_to = parse_day(match_to.group('day'), year_to, month_to, 'last')
+    year_to = parse_year(match_to['year'])
+    month_to = parse_month(match_to['month'], sub=12)
+    day_to = parse_day(match_to['day'], year_to, month_to, 'last')
 
     date_to = datetime.datetime(year_to, month_to, day_to)
 

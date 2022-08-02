@@ -38,8 +38,7 @@ def get_ranges_from_cve(cve, package, ecosystem):
     cve_ranges = []
     for node in nodes:
         for version_range in node:
-            version_ranges = get_version_ranges(version_range)
-            if version_ranges:
+            if version_ranges := get_version_ranges(version_range):
                 cve_ranges.append(VersionRange.from_range_list(version_ranges))
     upstream_versions = get_upstream_versions(package, ecosystem)
     classified_versions = classify_versions(upstream_versions, cve_ranges)
@@ -79,7 +78,7 @@ def get_configuration_nodes(cve, apps_only=True):
     :param apps_only: bool, only return configuration nodes affecting application, or all nodes
     :return: [[str],[str]], list of lists of affected version ranges (as strings)
     """
-    nodes = list()
+    nodes = []
 
     for configuration in cve.configurations.nodes:
         data = nvdlib.utils.rgetattr(configuration, 'data')
@@ -146,11 +145,10 @@ class VersionSpec(object):
             VersionOperator.GT: operator.lt
         }
 
-        op_func = op_map.get(self.operator)
-        if not op_func:
+        if op_func := op_map.get(self.operator):
+            return op_func(this_version, other_version)
+        else:
             raise ValueError('Unsupported operator {op}'.format(op=str(self.operator)))
-
-        return op_func(this_version, other_version)
 
     @classmethod
     def from_str(cls, version_spec):
@@ -375,8 +373,7 @@ def get_upstream_versions(package, ecosystem):
         'javascript': get_versions_for_npm_package
     }
 
-    get_versions = eco_map.get(ecosystem)
-    if not get_versions:
+    if get_versions := eco_map.get(ecosystem):
+        return get_versions(package)
+    else:
         raise ValueError('Unsupported ecosystem {e}'.format(e=ecosystem))
-
-    return get_versions(package)

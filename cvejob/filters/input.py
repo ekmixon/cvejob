@@ -142,12 +142,12 @@ class IsSupportedGitHubLanguageCheck(CveCheck):
 
         self._stemmer = PorterStemmer()
         # regexp to split strings on punctuation
-        self._punc_re = re.compile(r'[\s{}]+'.format(re.escape(punctuation)))
+        self._punc_re = re.compile(f'[\s{re.escape(punctuation)}]+')
         self._name_whitelist = {self._stemmer.stem(x) for x in self._name_whitelist_raw}
 
     def is_security_project(self, owner, repo):
         """Check whether this GitHub project is likely a security project."""
-        regexp = re.compile(r'[\s{}]+'.format(re.escape(punctuation)))
+        regexp = re.compile(f'[\s{re.escape(punctuation)}]+')
 
         # split on punctuation
         words = regexp.split(owner)
@@ -158,10 +158,7 @@ class IsSupportedGitHubLanguageCheck(CveCheck):
             x for y in [re.sub('([a-z])([A-Z])', r'\1 \2', w).split() for w in words] for x in y
         ]
 
-        for word in words:
-            if self._stemmer.stem(word) in self._name_whitelist:
-                return True
-        return False
+        return any(self._stemmer.stem(word) in self._name_whitelist for word in words)
 
     def check(self):
         """Perform the check."""
@@ -178,10 +175,7 @@ class IsSupportedGitHubLanguageCheck(CveCheck):
                 return None
 
             paths = parsed.path.strip('/').split('/')
-            if len(paths) < 2:
-                return None
-
-            return paths[0], paths[1]
+            return None if len(paths) < 2 else (paths[0], paths[1])
 
         def is_supported_gh_language(owner, repo):
             """Check whether GitHub's (owner, repo) is written in supported language."""
@@ -192,7 +186,7 @@ class IsSupportedGitHubLanguageCheck(CveCheck):
             headers = {}
             token = os.environ.get('GITHUB_TOKEN')
             if token:
-                headers.update({'Authorization': 'token {token}'.format(token=token)})
+                headers['Authorization'] = 'token {token}'.format(token=token)
 
             response = requests.get(url, headers=headers)
             if response.status_code != 200:
@@ -202,9 +196,7 @@ class IsSupportedGitHubLanguageCheck(CveCheck):
             lang_group = (Config.ecosystem, *self.lang_groups.get(Config.ecosystem, []))
 
             # if repo languages list contain the language for which the job is being run
-            if (set(x.lower() for x in langs) & set(y.lower() for y in lang_group)):
-                return True
-            return False
+            return bool({x.lower() for x in langs} & {y.lower() for y in lang_group})
 
         for ref in refs:
             result = is_github_ref(ref)
@@ -228,9 +220,7 @@ class AffectsApplicationCheck(CveCheck):
 
     def check(self):
         """Perform the check."""
-        if utils.get_cpe(self._doc, cpe_type='application'):
-            return True
-        return False
+        return bool(utils.get_cpe(self._doc, cpe_type='application'))
 
 
 class NotUnexpectedSiteInReferencesCheck(CveCheck):
@@ -271,12 +261,9 @@ class NotUnexpectedSiteInReferencesCheck(CveCheck):
                     continue
 
                 for site in self.known_sites[ecosystem]:
-                    if ref_parsed.hostname == site.hostname:
-                        if site.path and not ref_parsed.path.startswith(site.path):
-                            # site matches the references, but path is different,
-                            # so this is not a problem
-                            continue
-
+                    if ref_parsed.hostname == site.hostname and (
+                        not site.path or ref_parsed.path.startswith(site.path)
+                    ):
                         # reference points to a site which covers some other ecosystem,
                         # so no reason to continue processing this CVE
                         return False

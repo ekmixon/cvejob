@@ -36,10 +36,7 @@ class NvdToolkitPackageNameIdentifier(NaivePackageNameIdentifier):
         candidates = [x[0][0] for x in results]
 
         ecosystem = Config.ecosystem
-        if ecosystem == 'java':
-            vendor = candidates
-        else:
-            vendor = [ecosystem]
+        vendor = candidates if ecosystem == 'java' else [ecosystem]
         product = candidates
 
         return run_cpe2pkg(vendor, product)

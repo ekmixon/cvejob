@@ -27,14 +27,14 @@ def get_expected_version(arguments):
     try:
         major = int(arguments[1])
     except Exception as e:
-        print("Can not parse major version '{}'".format(arguments[1]))
+        print(f"Can not parse major version '{arguments[1]}'")
         raise e
 
     # try to read minor version
     try:
         minor = int(arguments[2])
     except Exception as e:
-        print("Can not parse minor version '{}'".format(arguments[2]))
+        print(f"Can not parse minor version '{arguments[2]}'")
         raise e
 
     return (major, minor)
@@ -48,7 +48,7 @@ def get_actual_version():
 def compare_versions(actual, expected):
     """Compare Python versions, return the exit code."""
     if actual < expected:
-        print("Unsupported version {}.{}".format(actual[0], actual[1]))
+        print(f"Unsupported version {actual[0]}.{actual[1]}")
         return 1
     else:
         m = "OK: actual Python version {}.{} conforms to expected version {}.{}"
